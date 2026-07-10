@@ -76,29 +76,23 @@
                 if (!res.ok) throw new Error('文件读取失败，请检查 problem.txt 是否存在');
                 const text = await res.text();
                 // 分割每行，过滤空行
-                const ids = text.split('\n').map(v => v.trim()).filter(v => v);
-                renderList(ids);
+                const lines = text.split('\n').map(v => v.trim()).filter(v => v);
+                renderList(lines);
             } catch (err) {
                 listDom.innerHTML = `<p style="color:red">加载失败：${err.message}<br>本地打开会跨域报错，请部署至 GitHub Pages 访问</p>`;
             }
         }
 
-        // 根据题号获取题目名称（洛谷公开接口）
-        async function getProblemName(pid) {
-            try {
-                const api = await fetch(`https://www.luogu.com.cn/problem/${pid}?_contentOnly=1`);
-                const data = await api.json();
-                return data.currentProblem.title || '未知题目';
-            } catch {
-                return '获取标题失败';
-            }
-        }
-
-        // 渲染列表
-        async function renderList(pidList) {
+        // 渲染列表：解析每行「题号 名称」
+        function renderList(lineList) {
             listDom.innerHTML = '';
-            for (const pid of pidList) {
-                const name = await getProblemName(pid);
+            for (const line of lineList) {
+                // 按第一个空格分割，防止题目名包含空格
+                const spaceIndex = line.indexOf(' ');
+                // 分割题号、题目名
+                const pid = spaceIndex === -1 ? line : line.slice(0, spaceIndex);
+                const name = spaceIndex === -1 ? '无标题' : line.slice(spaceIndex + 1).trim();
+
                 const url = `https://www.luogu.com.cn/problem/${pid}`;
                 const html = `
                     <div class="item">
