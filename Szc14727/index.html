@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猎奇题单</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            background-color: #f5f7fa;
+        }
+        h1 {
+            text-align: center;
+            color: #222;
+            margin-bottom: 40px;
+            font-size: 28px;
+        }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .info {
+            font-size: 16px;
+        }
+        .id {
+            color: #666;
+            margin-right: 10px;
+        }
+        .name {
+            color: #111;
+        }
+        .open-btn {
+            padding: 8px 18px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .open-btn:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            color: #888;
+            padding: 40px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>猎奇题单</h1>
+    <div id="list" class="loading">正在加载题目列表...</div>
+
+    <script>
+        const listDom = document.getElementById('list');
+
+        // 读取同目录 problem.txt
+        async function loadTxt() {
+            try {
+                const res = await fetch('./problem.txt');
+                if (!res.ok) throw new Error('文件读取失败，请检查 problem.txt 是否存在');
+                const text = await res.text();
+                // 分割每行，过滤空行
+                const ids = text.split('\n').map(v => v.trim()).filter(v => v);
+                renderList(ids);
+            } catch (err) {
+                listDom.innerHTML = `<p style="color:red">加载失败：${err.message}<br>本地打开会跨域报错，请部署至 GitHub Pages 访问</p>`;
+            }
+        }
+
+        // 根据题号获取题目名称（洛谷公开接口）
+        async function getProblemName(pid) {
+            try {
+                const api = await fetch(`https://www.luogu.com.cn/problem/${pid}?_contentOnly=1`);
+                const data = await api.json();
+                return data.currentProblem.title || '未知题目';
+            } catch {
+                return '获取标题失败';
+            }
+        }
+
+        // 渲染列表
+        async function renderList(pidList) {
+            listDom.innerHTML = '';
+            for (const pid of pidList) {
+                const name = await getProblemName(pid);
+                const url = `https://www.luogu.com.cn/problem/${pid}`;
+                const html = `
+                    <div class="item">
+                        <div class="info">
+                            <span class="id">${pid}</span>
+                            <span class="name">${name}</span>
+                        </div>
+                        <a class="open-btn" target="_blank" href="${url}">点击打开</a>
+                    </div>
+                `;
+                listDom.innerHTML += html;
+            }
+        }
+
+        // 启动
+        loadTxt();
+    </script>
+</body>
+</html>
