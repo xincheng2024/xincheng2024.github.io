@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>揭秘时间</title>
+    <title>查看时间</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -80,7 +80,7 @@
 </head>
 <body>
     <div class="card">
-        <div class="title">⏰ 揭秘倒计时</div>
+        <div class="title">⏰ 倒计时</div>
         <div class="time-box" id="timeBox">--:--:--</div>
         <button id="btn" disabled>🔒 暂未开放</button>
     </div>
@@ -131,7 +131,7 @@
             } else {
                 box.innerHTML = `00:00:00`;
                 btn.disabled = false;
-                btn.textContent = '🎁 查看揭秘图片';
+                btn.textContent = '🎁 查看图片';
                 btn.classList.add('active');
             }
         }
