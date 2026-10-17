@@ -9,6 +9,35 @@
 :root{--gold:#e8c47a;--gold2:#8a6a35;--bg1:#1c130a;--bg2:#0d0803;--red:#ff5a4c;--green:#4cd964}
 html,body{height:100%}
 body{background:radial-gradient(1200px 700px at 50% 30%,#2a1c0e,var(--bg2));color:#f3e6c8;font-family:"Microsoft YaHei","PingFang SC",sans-serif;overflow:hidden;touch-action:manipulation}
+body.light{background:radial-gradient(1200px 700px at 50% 30%,#f0e6d0,#ddd0b4);color:#3a2e18}
+body.light .btn{background:linear-gradient(180deg,#e8d9b8,#cfbc94);border-color:#a88a52;color:#3a2e18}
+body.light .btn-primary{background:linear-gradient(180deg,#d4a85a,#b8843a);border-color:#8a6228;color:#2a1a08}
+body.light input,body.light select{background:#fdf6e6;border-color:#a88a52;color:#3a2e18}
+body.light .tile{background:linear-gradient(160deg,#f5ecd4,#e6d6ac);border-color:#a88a52;color:#3a2e18}
+body.light .check{background:#fdf6e6;border-color:#a88a52}
+body.light .check.on{background:var(--gold);box-shadow:inset 0 0 0 3px #fdf6e6}
+body.light .card{background:linear-gradient(160deg,#fffaf0,#f0e4c8);border-color:#b89a5e;color:#3a2e18}
+body.light .seat-q,body.light #hand .qmark{background:#fffaf0;color:#3a2e18;border-color:#b89a5e}
+body.light .cfg-left,body.light .cfg-right{background:rgba(255,255,255,.6);border-color:rgba(138,106,53,.5)}
+body.light .seg button,body.light .cat-tabs button,body.light .assist-lv button{background:#e8d9b8;color:#3a2e18;border-color:#a88a52}
+body.light .seat{background:rgba(255,250,240,.75);border-color:#b89a5e;color:#3a2e18}
+body.light .modal{background:linear-gradient(180deg,#f5ecd4,#e6d6ac);border-color:#a88a52;color:#3a2e18}
+body.light .modal h3{color:#8a5a1d}
+body.light .mbody{color:#4a3a20}
+body.light .center-zone{background:rgba(255,255,255,.5);border-color:rgba(138,106,53,.5)}
+body.light .deck-zone,body.light .judge-stand{background:rgba(255,255,255,.4)}
+body.light .jtag{color:#6a5428}
+body.light .hp-dot.lost{background:#d8c8a8;border-color:#b8a078}
+body.light .eq-chip{background:#fdf6e6;border-color:#a88a52;color:#7a5a1d}
+body.light .log-strip{background:rgba(255,255,255,.7);border-color:rgba(138,106,53,.5)}
+body.light .log-strip .lg{color:#4a3a20}
+body.light .big-toast{background:rgba(255,248,230,.96);border-color:#8a6228;color:#3a2e18}
+body.light .cd-mask{background:rgba(240,230,210,.5)}
+body.light .tab-btn{background:#e8d9b8;color:#5a4628;border-color:#a88a52}
+body.light .tab-btn.on{background:#b8843a;color:#2a1a08;border-color:#8a6228}
+body.light .cat-tag{color:#6a5428}
+body.light #homeLock{background:#f5ecd4;border-color:#a88a52}
+body.light .cd-t,body.light .cd-n{color:#3a2e18}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 .btn{background:linear-gradient(180deg,#4a3016,#2b1a0a);border:1.5px solid var(--gold2);color:#f3e6c8;border-radius:8px;padding:9px 16px;font-size:15px;letter-spacing:2px;transition:.15s;min-height:38px}
 .btn:hover{border-color:var(--gold);box-shadow:0 0 10px rgba(232,196,122,.35)}
@@ -78,7 +107,7 @@ input,select{font-family:inherit;background:#1a1208;border:1px solid var(--gold2
   background:linear-gradient(160deg,#f7ecd2,#e4d0a8);color:#1a1208;border:1px solid #a89058;
   display:flex;flex-direction:column;box-shadow:0 2px 5px rgba(0,0,0,.5);transition:transform .12s}
 .card .corner{display:flex;justify-content:space-between;padding:3px 4px;font-size:13px;font-weight:bold;line-height:1}
-.card .cname{margin:auto;text-align:center;font-size:13px;font-weight:bold;letter-spacing:1px;padding:0 2px}
+.card .cname{margin:auto;text-align:center;font-size:13px;font-weight:bold;letter-spacing:1px;padding:0 2px;white-space:nowrap;overflow:hidden}
 .card .cat-tag{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:9px;color:#6a5428}
 .card.suit2{background:linear-gradient(160deg,#fbdcdc,#f0c0b8)}
 .card.back{background:linear-gradient(160deg,#3a5c8a,#1c3050);border-color:#2a4a70}
@@ -470,7 +499,7 @@ function buildDeck(){
 }
 /*================ 全局配置与状态 ================*/
 const CFG={aiLevel:3,players:5,thinkSec:2,fx:true,showDeadId:false,generalChoices:3,
-  schemes:{},ownIdentity:null,ownGeneral:null,enabledGenerals:null,enabledCards:null,cheatOn:false,xray:false,cheatKeep:null};
+  schemes:{},ownIdentity:null,ownGeneral:null,enabledGenerals:null,enabledCards:null,cheatOn:false,xray:false,cheatKeep:null,theme:"dark"};
 let G=null;
 function ensureCfgSets(){
   if(!CFG.enabledGenerals)CFG.enabledGenerals=new Set(GENERALS.map(g=>g.id));
@@ -660,6 +689,10 @@ function openCheatPwd(){
   openModal(`<h3>作弊模式</h3>
     <div class="mbody" style="text-align:center">请输入密码以启动作弊模式：</div>
     <div class="pwd-row"><input id="pwdInput" type="password" maxlength="8" placeholder="密码"></div>
+    <div class="mbody" style="text-align:center;margin-top:6px">主题：
+      <button class="btn" style="padding:4px 10px;font-size:12px;letter-spacing:0" onclick="setTheme('dark')">深色</button>
+      <button class="btn" style="padding:4px 10px;font-size:12px;letter-spacing:0" onclick="setTheme('light')">浅色</button>
+    </div>
     <div class="mfoot">
       <button class="btn" onclick="closeModal()">取 消</button>
       <button class="btn btn-primary" onclick="submitCheatPwd()">确 认</button>
@@ -667,6 +700,8 @@ function openCheatPwd(){
   $("#pwdInput").focus();
   $("#pwdInput").onkeydown=e=>{if(e.key==="Enter")submitCheatPwd();};
 }
+function setTheme(t){CFG.theme=t;applyTheme();}
+function applyTheme(){document.body.classList.toggle("light",CFG.theme==="light");}
 function submitCheatPwd(){
   if($("#pwdInput").value==="123456"){
     CFG.cheatOn=true;closeModal();toast("成功启动该模式（作弊）");refreshHomeLock();
@@ -1042,6 +1077,8 @@ async function startGame(){
   });
   log("主公体力上限+1","sys");
   G.deck=buildDeck().filter(c=>CFG.enabledCards.has(c.name));
+  log("所有人摸了4张起始手牌","sys");
+  for(const p of G.players){await drawCards(p,4);}
   renderAll();
   $("#cheatBtn").style.display=CFG.cheatOn?"block":"none";
   $("#cheatBtn").classList.remove("on");
