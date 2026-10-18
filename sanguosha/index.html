@@ -37,6 +37,10 @@ body.light .tab-btn{background:#e8d9b8;color:#5a4628;border-color:#a88a52}
 body.light .tab-btn.on{background:#b8843a;color:#2a1a08;border-color:#8a6228}
 body.light .cat-tag{color:#6a5428}
 body.light #homeLock{background:#f5ecd4;border-color:#a88a52}
+body.light .opt{background:#fdf6e6;border-color:#a88a52;color:#3a2e18}
+body.light .opt.sel{border-color:var(--gold);background:#e6d2a8;box-shadow:0 0 10px rgba(184,132,58,.4)}
+body.light .bg-box{background:rgba(255,255,255,.55);color:#5a4628}
+body.light .skill-box{background:rgba(255,255,255,.45);border-color:rgba(138,106,53,.5);color:#4a3a20}
 body.light .cd-t,body.light .cd-n{color:#3a2e18}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 .btn{background:linear-gradient(180deg,#4a3016,#2b1a0a);border:1.5px solid var(--gold2);color:#f3e6c8;border-radius:8px;padding:9px 16px;font-size:15px;letter-spacing:2px;transition:.15s;min-height:38px}
@@ -236,7 +240,7 @@ input,select{font-family:inherit;background:#1a1208;border:1px solid var(--gold2
 #game.paused .g-table,#game.paused .hand-zone{filter:brightness(.6)}
 </style>
 </head>
-<body>
+<body class="light">
 <!-- ============ 主页 ============ -->
 <section id="home" class="screen">
   <button id="homeLock" title="作弊模式" onclick="openCheatPwd()">🔒</button>
@@ -499,7 +503,7 @@ function buildDeck(){
 }
 /*================ 全局配置与状态 ================*/
 const CFG={aiLevel:3,players:5,thinkSec:2,fx:true,showDeadId:false,generalChoices:3,
-  schemes:{},ownIdentity:null,ownGeneral:null,enabledGenerals:null,enabledCards:null,cheatOn:false,xray:false,cheatKeep:null,theme:"dark"};
+  schemes:{},ownIdentity:null,ownGeneral:null,enabledGenerals:null,enabledCards:null,cheatOn:false,xray:false,cheatKeep:null,theme:"light"};
 let G=null;
 function ensureCfgSets(){
   if(!CFG.enabledGenerals)CFG.enabledGenerals=new Set(GENERALS.map(g=>g.id));
@@ -690,8 +694,8 @@ function openCheatPwd(){
     <div class="mbody" style="text-align:center">请输入密码以启动作弊模式：</div>
     <div class="pwd-row"><input id="pwdInput" type="password" maxlength="8" placeholder="密码"></div>
     <div class="mbody" style="text-align:center;margin-top:6px">主题：
-      <button class="btn" style="padding:4px 10px;font-size:12px;letter-spacing:0" onclick="setTheme('dark')">深色</button>
       <button class="btn" style="padding:4px 10px;font-size:12px;letter-spacing:0" onclick="setTheme('light')">浅色</button>
+      <button class="btn" style="padding:4px 10px;font-size:12px;letter-spacing:0" onclick="setTheme('dark')">深色</button>
     </div>
     <div class="mfoot">
       <button class="btn" onclick="closeModal()">取 消</button>
@@ -1135,7 +1139,7 @@ async function roundCountdown(){
     el.remove();
   }
   setPhaseText(`第${zhNum(G.round)}回合准备阶段`);
-  await wait(700);
+  await wait(2000);
 }
 function setPhaseText(t){$("#phaseText").textContent=t;}
 async function runTurn(p){
@@ -1227,7 +1231,7 @@ async function doJudge(target,text,ctx){
   let c=deckPop();
   G.judgeView={card:c,text:text+"：判定中…"};renderJudgeStand();
   log(`${pName(target)}【${text}】判定牌为 ${SUITS[c.suit]}${rankText(c.rank)}（${c.name}）`,"sys");
-  await wait(700);
+  await wait(2000);
   /* 鬼才 */
   const sima=G.players.find(p=>p.alive&&hasSkill(p,"鬼才"));
   if(sima){
@@ -1412,7 +1416,7 @@ async function dying(tgt,src,card){
       log(`${pName(p)}使用${via?`【${via}】`:""}【${c.name}】救了${pName(tgt)}，回复${heal}点体力`,"good");
       if(p.seat===HUMAN)toast(`你使用【${c.name}】救了${pName(tgt)}`);
       fxBurst($("#seat"+tgt.seat),"#5be08a");fxText($("#seat"+tgt.seat),"+"+heal,"fx-heal");
-      renderSeats();await wait(700);
+      renderSeats();await wait(2000);
     }
   }
   if(tgt.hp<1)await die(tgt,src);
@@ -1695,7 +1699,7 @@ function humanRespond(p,need,ctx,opts){
     let sel=null;
     $$("#pickCards .card").forEach(el=>{
       el.onclick=()=>{
-        sel=el.dataset.cid;
+        sel=(el.closest("[data-cid]")||el).dataset.cid;
         $$("#pickCards .card").forEach(x=>x.classList.toggle("sel",x===el));
         $("#pickOk").disabled=false;
       };
@@ -1719,28 +1723,29 @@ function humanSave(p,tgt,opts){
       ${opts.length?'<button class="btn btn-primary" id="pickOk" disabled="true">使 用</button>':""}</div>`);
     let sel=null;
     $$("#pickCards .card").forEach(el=>{
-      el.onclick=()=>{sel=el.dataset.cid;
+      el.onclick=()=>{sel=(el.closest("[data-cid]")||el).dataset.cid;
         $$("#pickCards .card").forEach(x=>x.classList.toggle("sel",x===el));
         $("#pickOk").disabled=false;};
     });
-    $("#pickOk").onclick=()=>{const c=opts.find(x=>x.id===sel);close(c?{c,via:c._as}:{})};
+    const okB=$("#pickOk");
+    if(okB)okB.onclick=()=>{const c=opts.find(x=>x.id===sel);close(c?{c,via:c._as}:{})};
     $("#pickCancel").onclick=()=>close(null);
   });
 }
 /*================ 无懈可击链 ================*/
 async function askWuxie(cardName,targets,src){
-  // 返回 true 表示被无懈抵消
+  // 返回 true 表示被无懈抵消；AI 先瞬间判定，人类最后询问
   let cur=0;
+  const order=[...G.players.filter(x=>x.alive)].sort((a,b)=>(a.isAI===b.isAI?0:(a.isAI?-1:1)));
   while(true){
     let user=null,pick=null;
-    for(const p of G.players){
+    for(const p of order){
       if(!p.alive)continue;
       const opts=effectiveCards(p,"wuxie");
       if(!opts.length)continue;
       const relevant=targets.length===0||targets.some(t=>p===t||aiWantsProtect(p,t));
       if(!relevant&&p.isAI)continue;
       if(p.isAI){
-        await think(p);
         if(aiWuxie(p,cardName,targets,src,cur)){
           user=p;pick=opts[0];break;
         }
@@ -1749,12 +1754,16 @@ async function askWuxie(cardName,targets,src){
         if(r&&r.c){user=p;pick=r.c;break;}
       }
     }
-    if(!user)return cur%2===1;
-    loseHand(user,pick);toDiscard(pick);
+    if(!user){
+      const blocked=cur%2===1;
+      if(blocked){log(`【${cardName}】被【无懈可击】抵消，未生效`,"hit");toast(`【${cardName}】被无懈可击抵消，未生效`);}
+      return blocked;
+    }
+    loseHand(user,pick);toDiscard(pick);renderHand();renderSeats();
     log(`${cur%2===1?"":"你的"}${pName(user)}使用【无懈可击】${cur?"抵消了无懈可击的效果":"抵消了【"+cardName+"】"}`,"sys");
     if(user.seat===HUMAN)toast(`你用【无懈可击】抵消了【${cardName}】`);
     centerAdd(pick,user);renderCenter();
-    await wait(700);
+    await wait(2000);
     cur++;
   }
 }
@@ -1786,7 +1795,7 @@ async function castSha(p,tgts,card,via){
   log(`${pName(p)}对${tgts.map(pName).join("、")}使用了${isVirtual?`【${via.name}】转化的`:`【${card.name}】`}【杀】${p.f.jiuSha?"（酒杀）":""}`);
   centerAdd(isVirtual?{name:"杀",suit:via.suit||"S",rank:1,cat:"普通",sub:"sha"}:card,p);
   if(CFG.fx){fxBurst($("#seat"+p.seat),"#ff9a4c");}
-  await wait(500);
+  await wait(2000);
   // 铁骑
   let noShan=false;
   if(hasSkill(p,"铁骑")){
@@ -1831,7 +1840,16 @@ async function resolveShaOne(p,tgt,card,noShan,via){
   for(let k=0;k<needShan;k++){
     const need2=k===0?false:false;
     const r=await requestResponse(tgt,"shan",{desc:needShan===2?`【无双】：需连续打出两张【闪】（第${k+1}/2张）`:"请打出【闪】响应【杀】",by:p,card});
-    if(r&&r.c){shanCount++;dodged=needShan===1||k===1;}
+    if(r&&(r.c||r.bagua)){
+      shanCount++;
+      if(r.c){
+        const c=r.c;
+        if(!c._virtual&&c.sub==="shan"){loseHand(tgt,c);toDiscard(c);}
+        else if(c._as&&c._base){const base=tgt.hand.find(x=>x.id===c._base);if(base){loseHand(tgt,base);toDiscard(base);}}
+        renderHand();
+      }
+      dodged=needShan===1||k===1;
+    }
     else{dodged=false;break;}
     if(needShan===1)dodged=true;
   }
@@ -1975,7 +1993,7 @@ async function castTrick(p,card){
     log(`${pName(p)}发动【集智】，摸一张牌`,"good");
     await drawCards(p,1,{silent:true});
   }
-  await wait(500);
+  await wait(2000);
 }
 async function finishTrick(card){centerClear();}
 function trickTargetsLegal(p,cardName){
@@ -1995,6 +2013,7 @@ function trickTargetsLegal(p,cardName){
 }
 async function trickWuzhong(p,card){
   await castTrick(p,card);
+  if(await askWuxie("无中生有",[p],p)){await finishTrick(card);return;}
   log(`${pName(p)}使用【无中生有】，摸两张牌`);
   await drawCards(p,2);
   await finishTrick(card);
@@ -2023,7 +2042,7 @@ async function duelLoop(a,b,card){
         else if(c._virtual){}
         log(`${pName(def)}打出【杀】响应【决斗】`);
         centerAdd({name:"杀",suit:c.suit||"S",rank:1,cat:"普通",sub:"sha"},def);
-        await wait(700);
+        await wait(2000);
       }else{responded=false;break;}
     }
     if(!responded){
@@ -2155,7 +2174,7 @@ async function trickNanman(p,card){
       else if(c._as==="武圣"||c._as==="龙胆"){const base=t.hand.find(x=>x.id===c._base);if(base){loseHand(t,base);toDiscard(base);}}
       log(`${pName(t)}打出【杀】响应【南蛮入侵】`);
       centerAdd({name:"杀",suit:c.suit||"S",rank:1,cat:"普通",sub:"sha"},t);
-      await wait(700);
+      await wait(2000);
     }else{
       log(`${pName(t)}未响应【南蛮入侵】，受到1点伤害`,"hit");
       await wait(500);
@@ -2178,7 +2197,7 @@ async function trickWanjian(p,card){
       else if(c._as==="龙胆"||c._as==="倾国"){const base=t.hand.find(x=>x.id===c._base);if(base){loseHand(t,base);toDiscard(base);}}
       log(`${pName(t)}打出【闪】响应【万箭齐发】`);
       centerAdd({name:"闪",suit:"H",rank:1,cat:"普通",sub:"shan"},t);
-      await wait(700);
+      await wait(2000);
     }else{
       log(`${pName(t)}未响应【万箭齐发】，受到1点伤害`,"hit");
       await wait(500);
@@ -2197,11 +2216,12 @@ async function trickTaoyuan(p,card){
     fxBurst($("#seat"+t.seat),"#5be08a");fxText($("#seat"+t.seat),"+1","fx-heal");
     log(`${pName(t)}回复1点体力`);
   }
-  renderAll();await wait(700);
+  renderAll();await wait(2000);
   await finishTrick(card);
 }
 async function trickWugu(p,card){
   await castTrick(p,card);
+  if(await askWuxie("五谷丰登",[],p)){await finishTrick(card);return;}
   const alive=G.players.filter(x=>x.alive);
   const shown=[];
   for(let i=0;i<alive.length;i++){const c=deckPop();if(c)shown.push(c);else break;}
