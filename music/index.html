@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>睿城音乐</title>
+<title>二中音乐</title>
 <style>
 :root {
   --bg: #f5f5f7;
@@ -16,8 +16,6 @@
   --btn-bg: #ffffff;
   --btn-text: #1a1a1a;
   --btn-disabled: #ccc;
-  --vinyl: #1a1a1a;
-  --vinyl-groove: #333;
   --shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 [data-theme="dark"] {
@@ -31,8 +29,6 @@
   --btn-bg: #2a2a2a;
   --btn-text: #f0f0f0;
   --btn-disabled: #555;
-  --vinyl: #e8e8e8;
-  --vinyl-groove: #c0c0c0;
   --shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -221,47 +217,6 @@ body {
   min-height: 0;
 }
 
-.vinyl-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.vinyl {
-  width: min(45vh, 380px);
-  height: min(45vh, 380px);
-  border-radius: 50%;
-  background: radial-gradient(circle at center, var(--vinyl-groove) 0%, var(--vinyl-groove) 8%, var(--vinyl) 8.5%, var(--vinyl) 100%);
-  position: relative;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-}
-.vinyl::before {
-  content: '';
-  position: absolute;
-  inset: 12%;
-  border-radius: 50%;
-  background: repeating-radial-gradient(circle, var(--vinyl-groove) 0px, var(--vinyl-groove) 1px, transparent 1px, transparent 4px);
-}
-.vinyl::after {
-  content: '';
-  position: absolute;
-  inset: 42%;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 4px var(--vinyl-groove);
-}
-.vinyl.playing { animation: spin 8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.album-art {
-  position: absolute;
-  width: 46%;
-  height: 46%;
-  border-radius: 50%;
-  object-fit: cover;
-  z-index: 2;
-  border: 3px solid var(--vinyl-groove);
-}
-.album-art.hidden { display: none; }
 
 .lyrics-area {
   width: 100%;
@@ -546,8 +501,8 @@ body {
   
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="logo-box">睿</div>
-      <div class="title">睿城音乐</div>
+      <div class="logo-box"><svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>
+      <div class="title">二中音乐</div>
     </div>
     <div class="search-area">
       <input class="search-box" id="searchBox" type="text" placeholder="搜索歌曲...">
@@ -559,13 +514,9 @@ body {
   </aside>
   
   <main class="player">
-    <div class="song-title" id="songTitle">睿城音乐</div>
+    <div class="song-title" id="songTitle">二中音乐</div>
     <div class="stage">
-      <div class="vinyl-wrap" id="vinylWrap">
-        <div class="vinyl" id="vinyl"></div>
-        <img class="album-art hidden" id="albumArt" alt="">
-      </div>
-      <div class="lyrics-area hidden" id="lyricsArea">
+      <div class="lyrics-area" id="lyricsArea">
         <div class="browse-hint" id="browseHint">拖动查看 · 点击播放回到当前</div>
         <div class="lyrics-scroll" id="lyricsScroll"></div>
       </div>
@@ -583,7 +534,6 @@ body {
         <button class="ctrl-btn" id="prevBtn" title="上一首">⏮</button>
         <button class="ctrl-btn play-btn" id="playBtn" title="播放/暂停">▶</button>
         <button class="ctrl-btn" id="nextBtn" title="下一首">⏭</button>
-        <button class="ctrl-btn" id="lyricBtn" title="歌词">词</button>
         <div class="menu-wrap">
           <button class="ctrl-btn" id="speedBtn" title="倍速">1.0</button>
           <div class="speed-menu hidden" id="speedMenu"></div>
@@ -628,7 +578,6 @@ const state = {
   songs: [],
   currentIndex: -1,
   isPlaying: false,
-  showLyrics: false,
   speed: 1.0,
   order: 'list',
 };
@@ -644,9 +593,6 @@ const $ = id => document.getElementById(id);
 const audio = $('audio');
 const songList = $('songList');
 const songTitle = $('songTitle');
-const vinyl = $('vinyl');
-const vinylWrap = $('vinylWrap');
-const albumArt = $('albumArt');
 const lyricsArea = $('lyricsArea');
 const lyricsScroll = $('lyricsScroll');
 const browseHint = $('browseHint');
@@ -658,7 +604,6 @@ const progressFill = $('progressFill');
 const playBtn = $('playBtn');
 const prevBtn = $('prevBtn');
 const nextBtn = $('nextBtn');
-const lyricBtn = $('lyricBtn');
 const speedBtn = $('speedBtn');
 const speedMenu = $('speedMenu');
 const orderBtn = $('orderBtn');
@@ -741,18 +686,16 @@ function playSong(index) {
   items[index] && items[index].classList.add('active');
   updateNavButtons();
   loadLyrics(song);
-  loadAlbumArt(song);
   audio.play().then(() => setPlaying(true)).catch(e => console.warn(e));
 }
 
 function setPlaying(playing) {
   state.isPlaying = playing;
   playBtn.innerHTML = playing ? '⏸' : '▶';
-  vinyl.classList.toggle('playing', playing);
 }
 
 function togglePlay() {
-  if (state.showLyrics && browsing) {
+  if (browsing) {
     exitBrowseMode();
     return;
   }
@@ -783,7 +726,9 @@ function updateNavButtons() {
 }
 
 function loadLyrics(song) {
-  renderLyrics(song.lyrics || []);
+  const lyr = song.lyrics || [];
+  renderLyrics(lyr);
+  noLyricsMsg.classList.toggle('show', lyr.length === 0);
 }
 
 function renderLyrics(lyrics) {
@@ -835,16 +780,6 @@ function updateLyrics(time) {
   currentLyricIndex = idx;
 }
 
-function loadAlbumArt(song) {
-  if (song.artUrl) {
-    albumArt.src = song.artUrl;
-    albumArt.classList.remove('hidden');
-  } else {
-    albumArt.src = '';
-    albumArt.classList.add('hidden');
-  }
-}
-
 function fmtTime(s) {
   if (!isFinite(s) || s < 0) s = 0;
   const m = Math.floor(s / 60);
@@ -858,7 +793,7 @@ audio.addEventListener('timeupdate', () => {
   totalTime.textContent = fmtTime(dur);
   const pct = dur ? (cur / dur) * 100 : 0;
   progressFill.style.width = pct + '%';
-  if (state.showLyrics) updateLyrics(cur);
+  updateLyrics(cur);
 });
 audio.addEventListener('loadedmetadata', () => {
   totalTime.textContent = fmtTime(audio.duration);
@@ -895,34 +830,6 @@ window.addEventListener('touchend', () => { dragging = false; });
 playBtn.onclick = togglePlay;
 prevBtn.onclick = prevSong;
 nextBtn.onclick = nextSong;
-
-lyricBtn.onclick = () => {
-  const song = state.songs[state.currentIndex];
-  if (state.currentIndex === -1 || !song) return;
-  if (!song.lyrics || song.lyrics.length === 0) {
-    noLyricsMsg.classList.add('show');
-    setTimeout(() => noLyricsMsg.classList.remove('show'), 2000);
-    return;
-  }
-  state.showLyrics = !state.showLyrics;
-  if (state.showLyrics) {
-    vinylWrap.style.display = 'none';
-    lyricsArea.classList.remove('hidden');
-    lyricBtn.textContent = '曲';
-    browsing = false;
-    if (jumpBtn) { jumpBtn.remove(); jumpBtn = null; }
-    browseHint.classList.remove('show');
-    currentLyricIndex = -1;
-    updateLyrics(audio.currentTime);
-  } else {
-    vinylWrap.style.display = 'flex';
-    lyricsArea.classList.add('hidden');
-    lyricBtn.textContent = '词';
-    browsing = false;
-    if (jumpBtn) { jumpBtn.remove(); jumpBtn = null; }
-    browseHint.classList.remove('show');
-  }
-};
 
 let isDragging = false;
 let dragStartY = 0;
@@ -1126,4 +1033,3 @@ init();
 </script>
 </body>
 </html>
-s
