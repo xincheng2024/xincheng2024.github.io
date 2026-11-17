@@ -255,23 +255,6 @@ body {
   text-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }
 [data-theme="light"] .lyric-line.current { color: #1a1a1a; text-shadow: none; }
-.jump-btn {
-  position: absolute;
-  right: 16px;
-  padding: 8px 16px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  z-index: 5;
-  white-space: nowrap;
-  transition: transform 0.15s, opacity 0.2s;
-}
-.jump-btn:hover { transform: scale(1.08); }
 .browse-hint {
   position: absolute;
   top: 12px;
@@ -679,7 +662,6 @@ function playSong(index) {
   speedBtn.textContent = '1.0';
   songTitle.textContent = song.name;
   browsing = false;
-  if (jumpBtn) { jumpBtn.remove(); jumpBtn = null; }
   if (browseHint) browseHint.classList.remove('show');
   renderList(state.songs);
   const items = songList.querySelectorAll('.song-item');
@@ -695,10 +677,7 @@ function setPlaying(playing) {
 }
 
 function togglePlay() {
-  if (browsing) {
-    exitBrowseMode();
-    return;
-  }
+  if (browsing) exitBrowseMode();
   if (state.currentIndex === -1) {
     if (state.songs.length) playSong(0);
     return;
@@ -745,11 +724,9 @@ function renderLyrics(lyrics) {
 
 let currentLyricIndex = -1;
 let browsing = false;
-let jumpBtn = null;
 
 function exitBrowseMode() {
   browsing = false;
-  if (jumpBtn) { jumpBtn.remove(); jumpBtn = null; }
   browseHint.classList.remove('show');
   currentLyricIndex = -1;
   updateLyrics(audio.currentTime);
@@ -842,7 +819,6 @@ function enterBrowseMode() {
 }
 
 lyricsArea.addEventListener('mousedown', e => {
-  if (e.target.classList.contains('jump-btn')) return;
   isDragging = true;
   suppressClick = false;
   dragStartY = e.clientY;
@@ -866,7 +842,6 @@ window.addEventListener('mouseup', () => {
 });
 
 lyricsArea.addEventListener('touchstart', e => {
-  if (e.target.classList.contains('jump-btn')) return;
   isDragging = true;
   suppressClick = false;
   dragStartY = e.touches[0].clientY;
@@ -895,29 +870,12 @@ lyricsScroll.addEventListener('click', e => {
   const line = e.target.closest('.lyric-line');
   if (!line) return;
   const idx = parseInt(line.dataset.index);
-  if (isNaN(idx)) return;
-  showJumpButton(line, idx);
+  const song = state.songs[state.currentIndex];
+  if (!song || !song.lyrics || song.lyrics[idx] == null) return;
+  audio.currentTime = song.lyrics[idx].time;
+  exitBrowseMode();
+  if (audio.paused) audio.play().catch(() => {});
 });
-
-function showJumpButton(line, idx) {
-  if (jumpBtn) { jumpBtn.remove(); jumpBtn = null; }
-  jumpBtn = document.createElement('button');
-  jumpBtn.className = 'jump-btn';
-  jumpBtn.textContent = '切换到此句';
-  jumpBtn.onclick = (ev) => {
-    ev.stopPropagation();
-    const song = state.songs[state.currentIndex];
-    if (song && song.lyrics && song.lyrics[idx] != null) {
-      audio.currentTime = song.lyrics[idx].time;
-      exitBrowseMode();
-      if (audio.paused) audio.play().catch(() => {});
-    }
-  };
-  const lineRect = line.getBoundingClientRect();
-  const areaRect = lyricsArea.getBoundingClientRect();
-  jumpBtn.style.top = (lineRect.top - areaRect.top + lineRect.height / 2 - 18) + 'px';
-  lyricsArea.appendChild(jumpBtn);
-}
 
 SPEEDS.forEach(s => {
   const item = document.createElement('div');
