@@ -32,8 +32,8 @@
   --btn-bg: #2a2a2a;
   --btn-text: #f0f0f0;
   --btn-disabled: #555;
-  --vinyl: #0a0a0a;
-  --vinyl-groove: #222;
+  --vinyl: #e8e8e8;
+  --vinyl-groove: #c0c0c0;
   --shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -175,6 +175,27 @@ body {
   color: var(--text-soft);
   font-size: 15px;
 }
+.load-error {
+  padding: 30px 20px;
+  text-align: center;
+}
+.load-error-text {
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.retry-btn {
+  padding: 8px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.retry-btn:hover { opacity: 0.9; }
 /* ===== Player ===== */
 .player {
   flex: 1;
@@ -664,81 +685,87 @@ async function detectFiles() {
   const host = window.location.hostname;
   const path = window.location.pathname.replace(/\/+$/, '');
 
-  // Determine GitHub repo owner/repo
   let owner, repo;
   if (host.endsWith('.github.io')) {
-    const sub = host.split('.')[0]; // username
+    const sub = host.split('.')[0];
     const segs = path.split('/').filter(Boolean);
     if (segs.length > 0) {
-      // project page: username.github.io/repo/...
       owner = sub;
       repo = segs[0];
     } else {
-      // user page: username.github.io -> repo is username.github.io
       owner = sub;
       repo = sub + '.github.io';
     }
   } else {
-    return null; // not on GitHub Pages
+    return { error: 'not_github' };
   }
 
   const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/`;
+  const baseUrl = window.location.origin + path + (path.endsWith('/') ? '' : '/');
   try {
     const resp = await fetch(apiUrl);
-    if (!resp.ok) return null;
+    if (resp.status === 403) return { error: 'rate_limited' };
+    if (resp.status === 404) return { error: 'not_found' };
+    if (!resp.ok) return { error: 'api_error', status: resp.status };
     const files = await resp.json();
+    if (!Array.isArray(files)) return { error: 'api_error' };
     const mp3s = files.filter(f => /\.mp3$/i.test(f.name));
     const lrcs = files.filter(f => /\.(lrc|txt)$/i.test(f.name));
     const lrcMap = new Map();
     lrcs.forEach(f => {
       const base = f.name.replace(/\.(lrc|txt)$/i, '');
-      lrcMap.set(base.toLowerCase(), f.download_url);
+      lrcMap.set(base.toLowerCase(), f.name);
     });
-    const baseUrl = window.location.origin + path + (path.endsWith('/') ? '' : '/');
     const songs = mp3s.map(f => {
       const base = f.name.replace(/\.mp3$/i, '');
-      const lrcUrl = lrcMap.get(base.toLowerCase()) || null;
+      const lrcName = lrcMap.get(base.toLowerCase());
       return {
         name: base,
-        mp3Url: f.download_url || (baseUrl + encodeURIComponent(f.name)),
-        lrcUrl: lrcUrl,
+        mp3Url: baseUrl + encodeURIComponent(f.name),
+        lrcUrl: lrcName ? baseUrl + encodeURIComponent(lrcName) : null,
         lyrics: null
       };
     }).sort((a, b) => a.name.localeCompare(b.name, 'zh'));
-    return songs;
+    if (songs.length === 0) return { error: 'no_mp3' };
+    return { songs };
   } catch (e) {
     console.warn('GitHub API failed:', e);
-    return null;
+    return { error: 'network' };
   }
 }
 
 // ============ Loading ============
+const ERROR_MESSAGES = {
+  not_github: '当前不在 GitHub Pages 环境',
+  rate_limited: 'GitHub API 请求过于频繁，请稍后重试',
+  not_found: '未找到仓库或仓库为私有，请确认仓库公开',
+  api_error: 'GitHub API 访问失败，请稍后重试',
+  no_mp3: '仓库根目录未找到 mp3 文件，请确认文件已上传',
+  network: '网络连接失败，请检查网络后重试'
+};
+
 async function init() {
-  await new Promise(r => setTimeout(r, 1800)); // show loading ~2s
-  let songs = await detectFiles();
-  if (!songs || songs.length === 0) {
-    // fallback: file picker for local use
-    songList.innerHTML = '<div class="loading-hint">未自动检测到歌曲，请选择本地文件</div>';
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.accept = '.mp3,.lrc,.txt';
-    input.style.cssText = 'display:none';
-    document.body.appendChild(input);
-    input.onchange = () => {
-      songs = handleLocalFiles(input.files);
-      if (songs.length) {
-        state.songs = songs;
-        renderList(songs);
-      } else {
-        songList.innerHTML = '<div class="no-result">没搜索到歌曲</div>';
-      }
-    };
-    input.click();
+  await new Promise(r => setTimeout(r, 1800));
+  const result = await detectFiles();
+  if (result.error) {
+    showLoadError(result.error);
     return;
   }
-  state.songs = songs;
-  renderList(songs);
+  state.songs = result.songs;
+  renderList(result.songs);
+}
+
+function showLoadError(errKey) {
+  const msg = ERROR_MESSAGES[errKey] || '加载失败';
+  songList.innerHTML = `
+    <div class="load-error">
+      <div class="load-error-text">${msg}</div>
+      <button class="retry-btn" id="retryBtn">重新加载</button>
+    </div>`;
+  $('retryBtn').onclick = () => {
+    songList.innerHTML = '<div class="loading-hint">正在获取歌曲...</div>';
+    init();
+  };
 }
 
 function handleLocalFiles(files) {
